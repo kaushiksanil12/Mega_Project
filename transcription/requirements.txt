@@ -1,0 +1,6 @@
+whisper-openai==20231117
+IPython==8.12.0
+gTTS==2.3.1
+torch>=2.0.0
+numpy>=1.23.5
+ffmpeg-python>=0.2.0

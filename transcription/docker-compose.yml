@@ -1,0 +1,8 @@
+version: '3.8'
+
+services:
+  transcription:
+    build: .
+    volumes:
+      - ../audio-processor/output/final_chunks:/app/input
+      - ./output:/app/output
