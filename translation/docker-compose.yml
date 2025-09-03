@@ -1,0 +1,8 @@
+version: '3.8'
+
+services:
+  translation:
+    build: .
+    volumes:
+      - ../transcription/output:/app/transcripts
+      - ./output:/app/nllb_translated_texts
