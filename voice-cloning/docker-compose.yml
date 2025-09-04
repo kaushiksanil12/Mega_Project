@@ -1,13 +1,12 @@
-version: '3.8'
 services:
   voice-cloning:
     build: .
     volumes:
-      - ../audio-processor/shared/processed:/app/final_chunks:ro
+      - ../audio-processor/output/final_chunks:/app/final_chunks:ro
       - ../translation/output:/app/google_translated_texts:ro
       - ./output:/app/cloned_hindi_audio_soft
       - ./temp:/app/temp_pitch_shifted
     environment:
       - COQUI_TOS_AGREED=1
     container_name: voice-cloning
-    restart: "no"  # Run once and stop
+    restart: "no"
