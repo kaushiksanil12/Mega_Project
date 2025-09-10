@@ -4,5 +4,5 @@ services:
   transcription:
     build: .
     volumes:
-      - ../audio-processor/output/final_chunks:/app/input
+      - ../audio-processor/output/chunks:/app/input
       - ./output:/app/output

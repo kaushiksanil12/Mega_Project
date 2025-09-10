@@ -1,9 +1,13 @@
 version: '3.8'
+
 services:
   audio-processor:
     build: .
+    container_name: audio-processor
     volumes:
       - ./input:/app/input
       - ./output:/app/output
-    working_dir: /app
-    command: --help
+    environment:
+      - PYTHONUNBUFFERED=1
+    stdin_open: true
+    tty: true

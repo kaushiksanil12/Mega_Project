@@ -1,25 +1,33 @@
-FROM deezer/spleeter:3.8-2stems
+# Use Python 3.11 slim with multimedia support
+FROM python:3.11-slim
 
-# Fix Debian Buster repositories
-RUN sed -i 's/deb.debian.org/archive.debian.org/g' /etc/apt/sources.list \
-    && sed -i 's/security.debian.org/archive.debian.org/g' /etc/apt/sources.list \
-    && sed -i '/buster\/updates/d' /etc/apt/sources.list \
-    && sed -i '/buster-security/d' /etc/apt/sources.list
-
-# Update and install system dependencies
+# Install system dependencies for multimedia processing
 RUN apt-get update && apt-get install -y \
     ffmpeg \
     libsndfile1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements file and install Python dependencies
-COPY requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt
-
+# Set working directory
 WORKDIR /app
 
-COPY audio_processor.py .
+# Copy requirements first (for better caching)
+COPY requirements.txt ./
 
-RUN mkdir -p /app/input /app/output
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
-ENTRYPOINT ["python", "audio_processor.py"]
+# Create directories
+RUN mkdir -p input output output/chunks
+
+# Copy application code
+COPY audio_processor.py ./
+
+# Set permissions
+RUN chmod +x audio_processor.py
+
+# Run as non-root user for security
+RUN useradd -m appuser && chown -R appuser:appuser /app
+USER appuser
+
+# Default command
+CMD ["python", "audio_processor.py"]

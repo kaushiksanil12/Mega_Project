@@ -1,17 +1,18 @@
-FROM python:3.9-slim
+FROM python:3.12-slim
 
-# Set working directory
 WORKDIR /app
 
-# Copy requirements and install Python dependencies
-COPY requirements.txt .
-RUN pip install -r requirements.txt
+RUN apt-get update && apt-get install -y git wget build-essential && rm -rf /var/lib/apt/lists/*
 
-# Copy the translation script
-COPY translate.py .
+# Install exact Colab versions
+RUN pip install torch==2.8.0+cpu --index-url https://download.pytorch.org/whl/cpu
+RUN pip install transformers==4.56.0 sentencepiece==0.2.1 tqdm accelerate
 
-# Create input and output directories
-RUN mkdir -p /app/transcripts /app/nllb_translated_texts
+# Install IndicTransToolkit (it DOES work in Colab despite version check)
+RUN pip install IndicTransToolkit
 
-# Set the entry point
-ENTRYPOINT ["python", "translate.py"]
+COPY translate_exact_colab.py .
+RUN mkdir -p /app/input /app/output
+
+ENV PYTHONUNBUFFERED=1
+CMD ["python", "translate_exact_colab.py"]

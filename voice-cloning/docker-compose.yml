@@ -2,7 +2,7 @@ services:
   voice-cloning:
     build: .
     volumes:
-      - ../audio-processor/output/final_chunks:/app/final_chunks:ro
+      - ../audio-processor/output/chunks:/app/chunks:ro
       - ../translation/output:/app/google_translated_texts:ro
       - ./output:/app/cloned_hindi_audio_soft
       - ./temp:/app/temp_pitch_shifted

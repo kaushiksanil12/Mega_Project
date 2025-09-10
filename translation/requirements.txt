@@ -1,4 +1,6 @@
-transformers==4.36.2
 torch==2.0.1+cpu
-textwrap3==0.9.2
---extra-index-url https://download.pytorch.org/whl/cpu
+transformers==4.30.2
+sentencepiece==0.1.99
+IndicTransToolkit
+tqdm==4.65.0
+accelerate==0.20.3

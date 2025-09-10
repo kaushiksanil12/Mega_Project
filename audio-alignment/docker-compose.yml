@@ -1,0 +1,16 @@
+services:
+  audio-alignment:
+    build: .
+    volumes:
+      - ../voice-cloning/output:/app/cloned_chunks:ro           # Voice-cloned chunks
+      - ../audio-processor/output/final_chunks:/app/original_chunks:ro  # Original audio chunks
+      - ../audio-processor/shared/processed:/app/original_full:ro         # Full denoised audio
+      - ./output:/app/output                                    # Final aligned output
+      - ./temp:/app/temp                                        # Temporary processing
+    environment:
+      - PYTHONUNBUFFERED=1
+      - WHISPER_CACHE_DIR=/app/temp                            # Cache WhisperX models
+    container_name: audio-alignment
+    restart: "no"                                              # Run once and exit
+    working_dir: /app
+    # No ports exposed - this is a batch processing service
