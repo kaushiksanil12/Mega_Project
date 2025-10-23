@@ -5,14 +5,14 @@ from pathlib import Path
 from tqdm import tqdm
 import logging
 from huggingface_hub import login
-
+import os
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 def translate_all_files():
 
-    login(token="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")
+    login(token=os.environ["TOKEN"])
     input_folder = "/app/input"
     output_folder = "/app/output"
     
