@@ -12,7 +12,8 @@ logger = logging.getLogger(__name__)
 
 def translate_all_files():
 
-    # login(token=)
+    # login here 
+    
     input_folder = "/app/input"
     output_folder = "/app/output"
     
