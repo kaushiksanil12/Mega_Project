@@ -7,6 +7,7 @@ from pydub import AudioSegment
 import numpy as np
 from typing import List, Tuple
 
+
 def parse_timestamp_from_filename(filename: str) -> Tuple[float, float]:
     """
     Extract start and end timestamps from filename like 'hindi_chunk_103.2_104.2.wav'
@@ -20,9 +21,12 @@ def parse_timestamp_from_filename(filename: str) -> Tuple[float, float]:
     else:
         raise ValueError(f"Could not parse timestamp from filename: {filename}")
 
+
 def time_stretch_audio(input_path: str, target_duration: float, output_path: str):
     """
-    Time-stretch audio using librosa to match target duration without changing pitch.
+    Time-stretch audio based on the following rules:
+    - If cloned audio is shorter or equal to target: keep as is
+    - If cloned audio is longer than target: reduce by 20% (speed up by 1.2x)
     
     Args:
         input_path: Path to input audio file
@@ -33,21 +37,28 @@ def time_stretch_audio(input_path: str, target_duration: float, output_path: str
     y, sr = librosa.load(input_path, sr=None)
     current_duration = len(y) / sr
     
-    # Calculate stretch rate
-    stretch_rate = current_duration / target_duration
-    
-    if abs(stretch_rate - 1.0) < 0.01:  # No significant stretch needed
-        # Just copy the file
+    # Determine stretch behavior based on duration comparison
+    if current_duration <= target_duration:
+        # Audio is shorter or equal - keep as is
+        print(f"   -> Current duration ({current_duration:.2f}s) <= target ({target_duration:.2f}s)")
+        print(f"   -> Keeping audio as is (no stretching)")
         sf.write(output_path, y, sr)
         return
-    
-    print(f"   -> Stretching from {current_duration:.2f}s to {target_duration:.2f}s (rate: {stretch_rate:.2f})")
-    
-    # Time stretch using librosa
-    y_stretched = librosa.effects.time_stretch(y, rate=stretch_rate)
-    
-    # Save stretched audio
-    sf.write(output_path, y_stretched, sr)
+    else:
+        # Audio is longer - reduce by 20% (speed up by factor of 1.2)
+        stretch_rate = 1.2  # Speed up by 20%
+        print(f"   -> Current duration ({current_duration:.2f}s) > target ({target_duration:.2f}s)")
+        print(f"   -> Reducing length by 20% (rate: {stretch_rate:.2f}x)")
+        
+        # Time stretch using librosa (rate > 1 speeds up the audio)
+        y_stretched = librosa.effects.time_stretch(y, rate=stretch_rate)
+        
+        new_duration = len(y_stretched) / sr
+        print(f"   -> New duration: {new_duration:.2f}s")
+        
+        # Save stretched audio
+        sf.write(output_path, y_stretched, sr)
+
 
 def combine_cloned_chunks(
     cloned_chunks_folder: str, 
@@ -55,8 +66,8 @@ def combine_cloned_chunks(
     temp_folder: str = "./temp_stretched"
 ):
     """
-    Combine cloned voice chunks into a single audio file, time-stretching each chunk
-    to match its original timestamp duration.
+    Combine cloned voice chunks into a single audio file, applying conditional
+    time-stretching to each chunk based on its duration relative to the target.
     
     Args:
         cloned_chunks_folder: Folder containing cloned voice chunks
@@ -99,15 +110,15 @@ def combine_cloned_chunks(
     
     print(f"🔄 Processing chunks in chronological order...")
     
-    # Time-stretch each chunk to match original duration
+    # Process each chunk with conditional time-stretching
     stretched_files = []
     for i, chunk_info in enumerate(chunk_data):
         print(f"\n▶️ Processing: {chunk_info['filename']}")
         print(f"   -> Original timestamp: {chunk_info['start_time']:.1f}s - {chunk_info['end_time']:.1f}s")
         print(f"   -> Target duration: {chunk_info['duration']:.2f}s")
         
-        # Create stretched version
-        stretched_filename = f"stretched_{i:03d}_{chunk_info['filename']}"
+        # Create processed version (either stretched or copied as-is)
+        stretched_filename = f"processed_{i:03d}_{chunk_info['filename']}"
         stretched_path = os.path.join(temp_folder, stretched_filename)
         
         time_stretch_audio(
@@ -122,8 +133,8 @@ def combine_cloned_chunks(
             'end_time': chunk_info['end_time']
         })
     
-    # Combine all stretched chunks with proper timing
-    print(f"\n🔗 Combining {len(stretched_files)} stretched chunks...")
+    # Combine all processed chunks with proper timing
+    print(f"\n🔗 Combining {len(stretched_files)} processed chunks...")
     
     combined_audio = AudioSegment.empty()
     last_end_time = 0.0
@@ -165,17 +176,25 @@ def combine_cloned_chunks(
     print(f"📊 Total duration: {len(combined_audio)/1000:.2f} seconds")
     print(f"📁 Output saved to: {output_combined_path}")
 
+
 def main():
     """Main function to combine cloned voice chunks."""
     
-    # Configuration - CORRECTED PATH
-    cloned_chunks_folder = "../voice-cloning/output"  # ✅ Correct path to your cloned chunks
+    # Configuration
+    cloned_chunks_folder = "../voice-cloning/output"  # Path to your cloned chunks
     output_file = "./output/final_dubbed_audio.wav"
     
-    print("🎵 Audio Chunk Combiner")
-    print("=" * 50)
+    print("🎵 Audio Chunk Combiner with Conditional Time Stretching")
+    print("=" * 60)
     print(f"📂 Looking for cloned chunks in: {cloned_chunks_folder}")
     print(f"🎯 Output file: {output_file}")
+    print("\n📋 Time-stretching rules:")
+    print("   • If cloned audio ≤ expected duration: Keep as is")
+    print("   • If cloned audio > expected duration: Reduce by 20%")
+    print("=" * 60)
+    
+    # Create output directory if it doesn't exist
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
     
     # Check if input folder exists
     if not os.path.exists(cloned_chunks_folder):
@@ -185,7 +204,7 @@ def main():
     
     # List available files for debugging
     chunk_files = glob.glob(os.path.join(cloned_chunks_folder, "hindi_chunk_*.wav"))
-    print(f"🔍 Found {len(chunk_files)} hindi_chunk files")
+    print(f"\n🔍 Found {len(chunk_files)} hindi_chunk files")
     
     if len(chunk_files) > 0:
         print("📋 Sample files found:")
